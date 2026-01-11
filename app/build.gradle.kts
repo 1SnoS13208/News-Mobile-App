@@ -69,7 +69,7 @@ dependencies {
 
     // Room
     implementation (libs.androidx.room.runtime.v260)
-    ksp (libs.androidx.room.compiler.v284)
+    ksp (libs.androidx.room.compiler)
 
     // Kotlin Extensions and Coroutines support for Room
     implementation (libs.androidx.room.ktx.v260)
