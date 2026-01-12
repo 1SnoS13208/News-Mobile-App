@@ -29,7 +29,7 @@ class NewsViewModel(app: Application, val newsRepository: NewsRepository): Andro
     var oldSearchQuery: String? = null
 
     init {
-        getHeadlines("us")
+        getHeadlines("vn")
     }
 
     fun getHeadlines(countryCode: String) = viewModelScope.launch{
@@ -60,13 +60,14 @@ class NewsViewModel(app: Application, val newsRepository: NewsRepository): Andro
     private fun handleSearchNewsResponse(response: Response<NewsRespone>): Resource<NewsRespone>{
         if(response.isSuccessful) {
             response.body()?.let { resultResponse ->
-                if (headlinesResponse == null || newSearchQuery != oldSearchQuery) {
+                resultResponse.articles.removeAll { it.urlToImage.isNullOrBlank() }
+                if (searchNewsRespone == null || newSearchQuery != oldSearchQuery) {
                     searchNewsPage = 1
                     oldSearchQuery = newSearchQuery
                     searchNewsRespone = resultResponse
                 } else {
                     searchNewsPage++
-                    val oldArticles = headlinesResponse?.articles
+                    val oldArticles = searchNewsRespone?.articles
                     val newArticles = resultResponse.articles
                     oldArticles?.addAll(newArticles)
                 }
@@ -77,6 +78,7 @@ class NewsViewModel(app: Application, val newsRepository: NewsRepository): Andro
     }
 
     fun addToFavourites(article: Article) = viewModelScope.launch {
+        article.isFavourite = true
         newsRepository.upsert(article)
     }
 
@@ -103,16 +105,89 @@ class NewsViewModel(app: Application, val newsRepository: NewsRepository): Andro
         headlines.postValue(Resource.Loading())
         try {
             if(internetConnection(this.getApplication())) {
-                val response = newsRepository.getHeadlines(countryCode, headlinesPage)
+                val response = if (countryCode.equals("vn", ignoreCase = true)) {
+                    newsRepository.searchNews("Vietnam", headlinesPage)
+                } else {
+                    newsRepository.getHeadlines(countryCode, headlinesPage)
+                }
+
+                if (response.isSuccessful) {
+                    response.body()?.let { result ->
+                        result.articles.removeAll { it.urlToImage.isNullOrBlank() }
+
+                        if (headlinesPage == 1) {
+                            newsRepository.clearHeadlines()
+                        }
+                        val favArticles = newsRepository.getFavouritesList()
+                        val favUrls = favArticles.map { it.url }.toSet()
+
+                        result.articles.forEach { article ->
+                            if (!favUrls.contains(article.url)) {
+                                article.isFavourite = false
+                                newsRepository.upsert(article)
+                            }
+                        }
+                    }
+                }
                 headlines.postValue(handleHeadlinesResponse((response)))
             }
             else {
-                headlines.postValue(Resource.Error("No internet connection"))
+                loadOfflineHeadlines()
             }
         } catch (t: Throwable) {
-            when(t) {
-                is IOException -> headlines.postValue(Resource.Error("Unable to connect to the internet"))
-                else -> headlines.postValue(Resource.Error("No signal"))
+            loadOfflineHeadlines()
+        }
+    }
+
+    private suspend fun loadOfflineHeadlines() {
+        val offlineArticles = newsRepository.getHeadlinesList()
+        val offlineResponse = NewsRespone(offlineArticles.toMutableList(), "ok", offlineArticles.size)
+        headlines.postValue(Resource.Success(offlineResponse))
+    }
+
+    fun getArticleContent(url: String, onResult: (String?) -> Unit) = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        try {
+            val doc = org.jsoup.Jsoup.connect(url)
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .timeout(10000)
+                .get()
+            
+            // Try common article content selectors
+            val articleSelectors = listOf(
+                "article p",
+                "[class*=article-body] p",
+                "[class*=article-content] p", 
+                "[class*=post-content] p",
+                "[class*=entry-content] p",
+                "[class*=story-body] p",
+                ".content p",
+                "main p",
+                "p"
+            )
+            
+            var content: String? = null
+            for (selector in articleSelectors) {
+                val elements = doc.select(selector)
+                if (elements.isNotEmpty()) {
+                    val text = elements.eachText().joinToString("\n\n")
+                    if (text.length > 200) { // Only use if we got substantial content
+                        content = text
+                        break
+                    }
+                }
+            }
+            
+            // Fallback to all paragraphs if no selector worked
+            if (content.isNullOrBlank()) {
+                content = doc.select("p").eachText().joinToString("\n\n")
+            }
+            
+            viewModelScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                onResult(content?.takeIf { it.length > 50 })
+            }
+        } catch (e: Exception) {
+            viewModelScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                onResult(null)
             }
         }
     }
