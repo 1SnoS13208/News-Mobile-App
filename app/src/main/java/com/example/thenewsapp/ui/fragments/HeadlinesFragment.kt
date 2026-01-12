@@ -69,7 +69,6 @@ class HeadlinesFragment : Fragment(R.layout.fragment_headlines) {
                 is Resource.Error<*> -> {
                     hideProgressBar()
                     response.message?.let { message ->
-                        Toast.makeText(activity, "An error occured: $message", Toast.LENGTH_LONG).show()
                         showErrorMessage(message)
                     }
                 }
@@ -81,7 +80,7 @@ class HeadlinesFragment : Fragment(R.layout.fragment_headlines) {
         })
 
         retryButton.setOnClickListener {
-            newsViewModel.getHeadlines("us")
+            newsViewModel.getHeadlines("vn")
         }
     }
 
@@ -129,7 +128,7 @@ class HeadlinesFragment : Fragment(R.layout.fragment_headlines) {
                 isNoErrors && isNotLoadingAndNotLastPage && isAtLastItem && isNotAtBeginning &&
                         isTotalMoreThanVisible && isScrolling
             if (shouldPaginate) {
-                newsViewModel.getHeadlines("us")
+                newsViewModel.getHeadlines("vn")
                 isScrolling = false
             }
 

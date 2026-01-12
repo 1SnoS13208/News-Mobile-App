@@ -1,7 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Primary Brand Colors -->
+    <color name="primary">#1E3A5F</color>
+    <color name="primary_light">#2C5282</color>
+    <color name="primary_dark">#152A45</color>
+    
+    <!-- Accent Colors -->
+    <color name="accent">#FF6B6B</color>
+    <color name="accent_light">#FF8E8E</color>
+    <color name="accent_dark">#E84545</color>
+    
+    <!-- Gradient Colors -->
+    <color name="gradient_start">#1E3A5F</color>
+    <color name="gradient_end">#2C5282</color>
+    <color name="gradient_accent_start">#FF6B6B</color>
+    <color name="gradient_accent_end">#FFB347</color>
+    
+    <!-- Surface & Background -->
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_variant">#F8F9FA</color>
+    <color name="background">#F5F6F8</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#1A1A2E</color>
+    <color name="text_secondary">#64748B</color>
+    <color name="text_tertiary">#94A3B8</color>
+    <color name="text_on_primary">#FFFFFF</color>
+    
+    <!-- Semantic Colors -->
+    <color name="success">#10B981</color>
+    <color name="warning">#F59E0B</color>
+    <color name="error">#EF4444</color>
+    
+    <!-- Border & Divider -->
+    <color name="border">#E2E8F0</color>
+    <color name="divider">#F1F5F9</color>
+    
+    <!-- Legacy Colors (for compatibility) -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="purple">#593c8f</color>
-    <color name="yellow">#ffc000</color>
+    <color name="purple">#1E3A5F</color>
+    <color name="yellow">#FF6B6B</color>
+    
+    <!-- Card & Overlay -->
+    <color name="card_background">#FFFFFF</color>
+    <color name="image_overlay">#40000000</color>
+    <color name="shimmer">#E0E0E0</color>
 </resources>
